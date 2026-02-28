@@ -34,44 +34,27 @@ export default function App() {
     setIsCreatingZapSign(true);
     setSignatureUrl(null);
 
-    // Configurações da ZapSign (Movidas para o Frontend)
-    const token = "ecd83a7a-ec4a-4ca0-8b03-bf71cf100b14d06a857c-96dd-4bad-821e-6af421c5bcdf";
-    const templateId = "f784a672-245c-4339-a86b-69ee2f04bf24";
-
     try {
-      // Chamada DIRETA para a API da ZapSign (como o Firebase faz)
-      const response = await axios.post(
-        `https://sandbox.api.zapsign.com.br/api/v1/models/create-doc/?api_token=${token}`,
-        {
-          template_id: templateId,
-          signer_name: formData.nome,
-          signer_email: formData.email,
-          data: [
-            { de: "{{NOME COMPLETO}}", para: formData.nome },
-            { de: "{{CPF}}", para: formData.cpf },
-            { de: "{{RUA/AV}}", para: formData.rua },
-            { de: "{{NUMERO}}", para: formData.numero },
-            { de: "{{BAIRRO}}", para: formData.bairro },
-            { de: "{{CIDADE}}", para: formData.cidade },
-            { de: "{{ESTADO}}", para: formData.estado }
-          ]
-        },
-        {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        }
-      );
+      // Envio dos dados individuais para o servidor
+      const response = await axios.post('/api/zapsign/create', {
+        name: formData.nome,
+        email: formData.email,
+        cpf: formData.cpf,
+        rua: formData.rua,
+        numero: formData.numero,
+        bairro: formData.bairro,
+        cidade: formData.cidade,
+        estado: formData.estado
+      });
 
-      if (response.data.signers && response.data.signers[0].sign_url) {
-        setSignatureUrl(response.data.signers[0].sign_url);
+      if (response.data.sign_url) {
+        setSignatureUrl(response.data.sign_url);
       } else {
-        throw new Error('Não foi possível obter o link de assinatura da ZapSign.');
+        throw new Error(response.data.error || 'Erro desconhecido ao criar link');
       }
     } catch (error: any) {
       console.error('Erro ZapSign:', error);
-      const errorDetail = error.response?.data?.details?.detail || error.message;
-      alert('Erro ao integrar com ZapSign: ' + errorDetail);
+      alert('Erro ao integrar com ZapSign: ' + (error.response?.data?.details?.detail || error.message));
     } finally {
       setIsCreatingZapSign(false);
     }
