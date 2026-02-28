@@ -1,5 +1,5 @@
 export const onRequestPost: PagesFunction<{ 
-  ZAP_SIGN_TOKEN: string;
+  ZAPSIGN_API_TOKEN: string;
   ZAP_SIGN_TEMPLATE_ID: string;
 }> = async (context) => {
   try {
@@ -7,7 +7,7 @@ export const onRequestPost: PagesFunction<{
     const { name, email, cpf, rua, numero, bairro, cidade, estado } = body;
     
     // Prioriza variáveis de ambiente do Cloudflare, mas mantém fallback para teste
-    const token = context.env.ZAP_SIGN_TOKEN || "ecd83a7a-ec4a-4ca0-8b03-bf71cf100b14d06a857c-96dd-4bad-821e-6af421c5bcdf";
+    const token = context.env.ZAPSIGN_API_TOKEN || "ecd83a7a-ec4a-4ca0-8b03-bf71cf100b14d06a857c-96dd-4bad-821e-6af421c5bcdf";
     const templateId = context.env.ZAP_SIGN_TEMPLATE_ID || "f784a672-245c-4339-a86b-69ee2f04bf24";
 
     const response = await fetch(
