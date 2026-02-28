@@ -1,0 +1,5 @@
+{
+  "name": "Gerador de Procuração e Contrato",
+  "description": "Ferramenta para preenchimento e download de procuração, declaração de pobreza e contrato de honorários.",
+  "requestFramePermissions": []
+}
