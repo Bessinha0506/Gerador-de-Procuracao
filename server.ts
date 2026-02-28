@@ -16,8 +16,8 @@ async function startServer() {
   // ZapSign API Integration - Usando Modelos (Templates)
   app.post("/api/zapsign/create", async (req, res) => {
     const { name, email, cpf, rua, numero, bairro, cidade, estado } = req.body;
-    const token = "ecd83a7a-ec4a-4ca0-8b03-bf71cf100b14d06a857c-96dd-4bad-821e-6af421c5bcdf";
-    const templateId = "f784a672-245c-4339-a86b-69ee2f04bf24";
+    const token = process.env.ZAPSIGN_TOKEN || "c9efa7d7-90b4-4282-9ac8-9b45d92163f767f7bed0-9bac-47ef-bac0-8cc18f3b43d9";
+    const templateId = process.env.ZAPSIGN_TEMPLATE_ID || "218d4177-230d-4c0d-9073-da28ec9bbb54";
 
     try {
       const response = await axios.post(
