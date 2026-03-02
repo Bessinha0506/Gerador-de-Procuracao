@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
 import { User, CreditCard, MapPin, Mail, Link, Copy, Check, ExternalLink } from 'lucide-react';
 import axios from 'axios';
 
@@ -18,8 +18,62 @@ export default function App() {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  const [states, setStates] = useState<{ id: number; nome: string; sigla: string }[]>([]);
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+
+  // Carrega apenas os estados ao montar o componente
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        const response = await axios.get('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+        setStates(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar estados:', error);
+      }
+    };
+    fetchStates();
+  }, []);
+
+  // Busca cidades sempre que o estado selecionado mudar e for um estado válido
+  useEffect(() => {
+    const selectedState = states.find(s => 
+      s.nome.toLowerCase() === formData.estado.toLowerCase() || 
+      s.sigla.toLowerCase() === formData.estado.toLowerCase()
+    );
+
+    if (selectedState) {
+      const fetchCities = async () => {
+        setIsLoadingCities(true);
+        try {
+          const response = await axios.get(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState.sigla}/municipios?orderBy=nome`);
+          const cityNames = response.data.map((c: any) => c.nome);
+          setCitySuggestions(cityNames);
+        } catch (error) {
+          console.error('Erro ao buscar cidades:', error);
+        } finally {
+          setIsLoadingCities(false);
+        }
+      };
+      fetchCities();
+    } else {
+      setCitySuggestions([]);
+    }
+  }, [formData.estado, states]);
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+
+    if (name === 'cpf') {
+      value = value.replace(/\D/g, ''); // Remove tudo o que não é dígito
+      if (value.length > 11) value = value.slice(0, 11); // Limita a 11 dígitos
+
+      // Aplica a máscara 000.000.000-00
+      value = value.replace(/(\d{3})(\d)/, '$1.$2');
+      value = value.replace(/(\d{3})(\d)/, '$1.$2');
+      value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -73,9 +127,9 @@ export default function App() {
     <div className="min-h-screen bg-[#4d4d4d] py-6 px-4 sm:px-6 lg:px-8 font-sans text-white">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
-          <img 
-            src="https://i.postimg.cc/Gt3GpNCS/logo.png" 
-            alt="Logo Alonso Advogados" 
+          <img
+            src="https://i.postimg.cc/Gt3GpNCS/logo.png"
+            alt="Logo Alonso Advogados"
             className="mx-auto h-40 w-auto mb-2"
           />
           <p className="text-slate-300 text-sm">Gerador de Procuração (Via ZapSign)</p>
@@ -118,11 +172,38 @@ export default function App() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#c5a059]">Cidade</label>
-                <input type="text" name="cidade" value={formData.cidade} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-2xl outline-none" placeholder="Cidade" />
+                <input
+                  type="text"
+                  name="cidade"
+                  value={formData.cidade}
+                  onChange={handleChange}
+                  list="cities-list"
+                  className={`w-full px-4 py-3 bg-white/10 border border-white/10 rounded-2xl outline-none ${isLoadingCities ? 'opacity-50' : ''}`}
+                  placeholder={formData.estado ? "Digite a cidade" : "Selecione o estado primeiro"}
+                  disabled={!formData.estado || isLoadingCities}
+                />
+                <datalist id="cities-list">
+                  {citySuggestions.map((city, index) => (
+                    <option key={`${city}-${index}`} value={city} />
+                  ))}
+                </datalist>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-bold uppercase tracking-wider text-[#c5a059]">Estado</label>
-                <input type="text" name="estado" value={formData.estado} onChange={handleChange} className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-2xl outline-none" placeholder="SP" />
+                <input
+                  type="text"
+                  name="estado"
+                  value={formData.estado}
+                  onChange={handleChange}
+                  list="states-list"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/10 rounded-2xl outline-none"
+                  placeholder="Selecione ou digite o estado"
+                />
+                <datalist id="states-list">
+                  {states.map((state) => (
+                    <option key={state.id} value={state.nome} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
